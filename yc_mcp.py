@@ -2,7 +2,6 @@ from mcp.server.fastmcp import FastMCP
 import requests
 import traceback
 import sys
-import datetime
 
 # Create the server
 mcp = FastMCP("YC Directory Server")
@@ -128,14 +127,48 @@ def company_resource(slug: str) -> dict:
         "summary": f"{result['name']}: {result.get('one_liner', 'No one-liner')}"
     }
 
-# Additional company list endpoints
+# Metadata tools
+@mcp.tool()
+def get_api_metadata() -> dict:
+    """
+    Get metadata about the YC API, including counts of companies, batches, industries, and tags.
+    
+    Returns:
+        Dictionary with API metadata
+    """
+    try:
+        url = "https://yc-oss.github.io/api/meta.json"
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+# Companies collection tools
+@mcp.tool()
+def list_all_companies() -> dict:
+    """
+    List all launched YC companies.
+    
+    Returns:
+        Dictionary with all companies
+    """
+    try:
+        url = "https://yc-oss.github.io/api/companies/all.json"
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        return {"companies": data}
+    except Exception as e:
+        return {"error": str(e)}
+
 @mcp.tool()
 def list_black_founded_companies() -> dict:
     """
-    List companies founded by Black entrepreneurs.
+    List Black-founded YC companies.
     
     Returns:
-        Dictionary with list of Black-founded companies
+        Dictionary with Black-founded companies
     """
     try:
         url = "https://yc-oss.github.io/api/companies/black-founded.json"
@@ -149,10 +182,10 @@ def list_black_founded_companies() -> dict:
 @mcp.tool()
 def list_hispanic_latino_founded_companies() -> dict:
     """
-    List companies founded by Hispanic or Latino entrepreneurs.
+    List Hispanic/Latino-founded YC companies.
     
     Returns:
-        Dictionary with list of Hispanic/Latino-founded companies
+        Dictionary with Hispanic/Latino-founded companies
     """
     try:
         url = "https://yc-oss.github.io/api/companies/hispanic-latino-founded.json"
@@ -166,10 +199,10 @@ def list_hispanic_latino_founded_companies() -> dict:
 @mcp.tool()
 def list_women_founded_companies() -> dict:
     """
-    List companies founded by women entrepreneurs.
+    List women-founded YC companies.
     
     Returns:
-        Dictionary with list of women-founded companies
+        Dictionary with women-founded companies
     """
     try:
         url = "https://yc-oss.github.io/api/companies/women-founded.json"
@@ -183,10 +216,10 @@ def list_women_founded_companies() -> dict:
 @mcp.tool()
 def list_nonprofit_companies() -> dict:
     """
-    List not-for-profit companies in YC.
+    List not-for-profit YC companies.
     
     Returns:
-        Dictionary with list of non-profit companies
+        Dictionary with not-for-profit companies
     """
     try:
         url = "https://yc-oss.github.io/api/companies/nonprofit.json"
@@ -200,10 +233,10 @@ def list_nonprofit_companies() -> dict:
 @mcp.tool()
 def list_hiring_companies() -> dict:
     """
-    List companies that are currently hiring.
+    List YC companies currently hiring.
     
     Returns:
-        Dictionary with list of companies currently hiring
+        Dictionary with companies that are currently hiring
     """
     try:
         url = "https://yc-oss.github.io/api/companies/hiring.json"
@@ -214,40 +247,22 @@ def list_hiring_companies() -> dict:
     except Exception as e:
         return {"error": str(e)}
 
-# Industry-related tools
-@mcp.tool()
-def list_industries() -> dict:
-    """
-    List all available industries in the YC database.
-    
-    Returns:
-        Dictionary with list of all industries
-    """
-    try:
-        url = "https://yc-oss.github.io/api/meta.json"
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        return {"industries": data.get("industries", [])}
-    except Exception as e:
-        return {"error": str(e)}
-
+# Industry tools
 @mcp.tool()
 def list_companies_by_industry(industry: str) -> dict:
     """
     List companies in a specific industry.
     
     Args:
-        industry: The industry name (e.g., "Consumer", "B2B")
+        industry: The industry identifier (e.g., "fintech", "healthcare", "b2b")
         
     Returns:
-        Dictionary with list of companies in the specified industry
+        Dictionary with companies in the specified industry
     """
     try:
-        # URL encode the industry name for the path
-        import urllib.parse
-        encoded_industry = urllib.parse.quote(industry.lower())
-        url = f"https://yc-oss.github.io/api/industries/{encoded_industry}.json"
+        # Convert spaces to hyphens and make lowercase for API compatibility
+        industry_slug = industry.lower().replace(" ", "-")
+        url = f"https://yc-oss.github.io/api/industries/{industry_slug}.json"
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
@@ -255,40 +270,22 @@ def list_companies_by_industry(industry: str) -> dict:
     except Exception as e:
         return {"error": str(e)}
 
-# Tag-related tools
-@mcp.tool()
-def list_tags() -> dict:
-    """
-    List all available tags in the YC database.
-    
-    Returns:
-        Dictionary with list of all tags
-    """
-    try:
-        url = "https://yc-oss.github.io/api/meta.json"
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        return {"tags": data.get("tags", [])}
-    except Exception as e:
-        return {"error": str(e)}
-
+# Tag tools
 @mcp.tool()
 def list_companies_by_tag(tag: str) -> dict:
     """
     List companies with a specific tag.
     
     Args:
-        tag: The tag name (e.g., "AI", "Marketplace")
+        tag: The tag identifier (e.g., "ai", "saas", "fintech")
         
     Returns:
-        Dictionary with list of companies with the specified tag
+        Dictionary with companies having the specified tag
     """
     try:
-        # URL encode the tag name for the path
-        import urllib.parse
-        encoded_tag = urllib.parse.quote(tag.lower())
-        url = f"https://yc-oss.github.io/api/tags/{encoded_tag}.json"
+        # Convert spaces to hyphens and make lowercase for API compatibility
+        tag_slug = tag.lower().replace(" ", "-")
+        url = f"https://yc-oss.github.io/api/tags/{tag_slug}.json"
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
@@ -296,124 +293,290 @@ def list_companies_by_tag(tag: str) -> dict:
     except Exception as e:
         return {"error": str(e)}
 
-# Metadata tool
+# Advanced comparison and analytics tools
 @mcp.tool()
-def get_api_metadata() -> dict:
+def compare_companies_by_batch(batch1: str, batch2: str) -> dict:
     """
-    Get metadata about the YC API including counts and last updated timestamp.
+    Compare companies from two different YC batches.
     
+    Args:
+        batch1: First batch identifier (e.g., "W21")
+        batch2: Second batch identifier (e.g., "S22")
+        
     Returns:
-        Dictionary with API metadata
+        Comparison statistics between the two batches
     """
     try:
-        url = "https://yc-oss.github.io/api/meta.json"
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
+        batch1_data = list_companies_by_batch(batch1)
+        batch2_data = list_companies_by_batch(batch2)
         
-        # Convert the timestamp to a readable format
-        timestamp = data.get("last_updated", 0)
-        if timestamp:
-            last_updated = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-        else:
-            last_updated = "Unknown"
+        if "error" in batch1_data or "error" in batch2_data:
+            return {"error": f"Failed to fetch batch data. {batch1_data.get('error')} {batch2_data.get('error')}"}
             
+        batch1_companies = batch1_data.get("companies", [])
+        batch2_companies = batch2_data.get("companies", [])
+        
+        # Get statistics
+        batch1_count = len(batch1_companies)
+        batch2_count = len(batch2_companies)
+        
+        # Calculate industry distributions
+        batch1_industries = {}
+        batch2_industries = {}
+        
+        for company in batch1_companies:
+            industry = company.get("industry", "Unknown")
+            batch1_industries[industry] = batch1_industries.get(industry, 0) + 1
+            
+        for company in batch2_companies:
+            industry = company.get("industry", "Unknown")
+            batch2_industries[industry] = batch2_industries.get(industry, 0) + 1
+        
         return {
-            "last_updated": last_updated,
-            "companies_count": data.get("companies_count", 0),
-            "batches_count": data.get("batches_count", 0),
-            "industries_count": data.get("industries_count", 0),
-            "tags_count": data.get("tags_count", 0)
+            "comparison": f"{batch1} ({batch1_count} companies) vs {batch2} ({batch2_count} companies)",
+            "batch1": {
+                "name": batch1,
+                "count": batch1_count,
+                "industries": batch1_industries
+            },
+            "batch2": {
+                "name": batch2,
+                "count": batch2_count,
+                "industries": batch2_industries
+            }
         }
     except Exception as e:
         return {"error": str(e)}
 
-# Stage filter tool
 @mcp.tool()
-def filter_companies_by_stage(stage: str) -> dict:
+def filter_companies(keyword: str = None, industry: str = None, batch: str = None, tag: str = None, limit: int = 50) -> dict:
     """
-    Filter companies by their growth stage.
+    Apply multiple filters to find companies matching specific criteria.
     
     Args:
-        stage: The company stage (e.g., "Seed", "Growth", "Public")
+        keyword: Optional keyword to search in company names and descriptions
+        industry: Optional industry filter
+        batch: Optional batch filter
+        tag: Optional tag filter
+        limit: Maximum number of results to return
         
     Returns:
-        Dictionary with list of companies at the specified stage
+        Dictionary with filtered companies
     """
     try:
-        url = "https://yc-oss.github.io/api/companies/all.json"
-        response = requests.get(url)
-        response.raise_for_status()
-        all_companies = response.json()
+        all_companies_data = list_all_companies()
+        if "error" in all_companies_data:
+            return all_companies_data
+            
+        all_companies = all_companies_data.get("companies", [])
+        filtered_companies = all_companies
         
-        # Filter companies by stage (case-insensitive)
-        stage_lower = stage.lower()
-        filtered_companies = [c for c in all_companies if c.get("stage", "").lower() == stage_lower]
+        filters_applied = []
         
-        return {"stage": stage, "companies": filtered_companies}
+        # Apply keyword filter
+        if keyword:
+            filtered_companies = [c for c in filtered_companies if 
+                                  keyword.lower() in c.get('name', '').lower() or 
+                                  keyword.lower() in c.get('one_liner', '').lower() or
+                                  keyword.lower() in c.get('long_description', '').lower()]
+            filters_applied.append(f"keyword='{keyword}'")
+        
+        # Apply industry filter
+        if industry:
+            filtered_companies = [c for c in filtered_companies if 
+                                  industry.lower() in [i.lower() for i in c.get('industries', [])]]
+            filters_applied.append(f"industry='{industry}'")
+        
+        # Apply batch filter
+        if batch:
+            filtered_companies = [c for c in filtered_companies if 
+                                 batch.lower() == c.get('batch', '').lower()]
+            filters_applied.append(f"batch='{batch}'")
+        
+        # Apply tag filter
+        if tag:
+            filtered_companies = [c for c in filtered_companies if 
+                                tag.lower() in [t.lower() for t in c.get('tags', [])]]
+            filters_applied.append(f"tag='{tag}'")
+        
+        # Apply limit
+        filtered_companies = filtered_companies[:limit]
+        
+        return {
+            "filters": filters_applied,
+            "total_matches": len(filtered_companies),
+            "companies": filtered_companies
+        }
     except Exception as e:
         return {"error": str(e)}
 
-# Region filter tool
 @mcp.tool()
-def filter_companies_by_region(region: str) -> dict:
+def get_industry_stats() -> dict:
     """
-    Filter companies by their region/location.
+    Get statistics about industries across all YC companies.
     
-    Args:
-        region: The region name (e.g., "United States", "Europe")
-        
     Returns:
-        Dictionary with list of companies in the specified region
+        Dictionary with industry statistics
     """
     try:
-        url = "https://yc-oss.github.io/api/companies/all.json"
-        response = requests.get(url)
-        response.raise_for_status()
-        all_companies = response.json()
+        all_companies_data = list_all_companies()
+        if "error" in all_companies_data:
+            return all_companies_data
+            
+        all_companies = all_companies_data.get("companies", [])
         
-        # Filter companies by region (substring match, case-insensitive)
-        region_lower = region.lower()
-        filtered_companies = []
+        # Count companies by industry
+        industry_counts = {}
         for company in all_companies:
-            regions = company.get("regions", [])
-            if any(region_lower in r.lower() for r in regions):
-                filtered_companies.append(company)
-                
-        return {"region": region, "companies": filtered_companies}
+            for industry in company.get("industries", ["Unknown"]):
+                industry_counts[industry] = industry_counts.get(industry, 0) + 1
+        
+        # Sort industries by count (descending)
+        sorted_industries = sorted(industry_counts.items(), key=lambda x: x[1], reverse=True)
+        
+        return {
+            "total_companies": len(all_companies),
+            "industry_stats": {
+                industry: count for industry, count in sorted_industries
+            }
+        }
     except Exception as e:
         return {"error": str(e)}
 
-# Team size comparison tool
 @mcp.tool()
-def list_companies_by_team_size(min_size: int, max_size: int = None) -> dict:
+def get_tag_stats() -> dict:
     """
-    List companies within a specific team size range.
+    Get statistics about tags across all YC companies.
     
-    Args:
-        min_size: Minimum team size
-        max_size: Maximum team size (optional)
-        
     Returns:
-        Dictionary with list of companies in the specified team size range
+        Dictionary with tag statistics
     """
     try:
-        url = "https://yc-oss.github.io/api/companies/all.json"
-        response = requests.get(url)
-        response.raise_for_status()
-        all_companies = response.json()
+        all_companies_data = list_all_companies()
+        if "error" in all_companies_data:
+            return all_companies_data
+            
+        all_companies = all_companies_data.get("companies", [])
         
-        # Filter companies by team size
-        if max_size is None:
-            filtered_companies = [c for c in all_companies if c.get("team_size", 0) >= min_size]
-            size_description = f"{min_size}+"
-        else:
-            filtered_companies = [c for c in all_companies if min_size <= c.get("team_size", 0) <= max_size]
-            size_description = f"{min_size}-{max_size}"
-                
-        return {"size_range": size_description, "companies": filtered_companies}
+        # Count companies by tag
+        tag_counts = {}
+        for company in all_companies:
+            for tag in company.get("tags", []):
+                tag_counts[tag] = tag_counts.get(tag, 0) + 1
+        
+        # Sort tags by count (descending)
+        sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)
+        
+        return {
+            "total_companies": len(all_companies),
+            "tag_stats": {
+                tag: count for tag, count in sorted_tags
+            }
+        }
     except Exception as e:
         return {"error": str(e)}
+
+# Stock data integration for public companies
+@mcp.tool()
+def get_public_company_stock_info(slug: str) -> dict:
+    """
+    Get stock information for a public YC company.
+    
+    Args:
+        slug: The company identifier
+        
+    Returns:
+        Dictionary with company details and stock information if available
+    """
+    try:
+        # First get company details
+        company_data = get_company_details(slug)
+        if "error" in company_data:
+            return company_data
+            
+        # Check if the company is public
+        if company_data.get("status") != "Public":
+            return {"error": f"{company_data.get('name')} is not a public company"}
+            
+        # For demonstration purposes, we'd integrate with a stock API here
+        # In a real implementation, you would call a stock data API with the company's ticker
+        # This is a placeholder that returns mock data
+        return {
+            "company": company_data.get("name"),
+            "status": "Public",
+            "stock_info": {
+                "note": "This is simulated stock data for demonstration purposes",
+                "price": "$XXX.XX",
+                "change": "+/-X.XX%",
+                "market_cap": "$XX.XX billion"
+            }
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+# Resources for various API entities
+@mcp.resource("yc://industry/{industry}")
+def industry_resource(industry: str) -> dict:
+    """
+    Resource representation for a YC industry.
+    
+    Args:
+        industry: The industry identifier
+        
+    Returns:
+        Resource representation with industry summary
+    """
+    result = list_companies_by_industry(industry)
+    if "error" in result:
+        return result
+    
+    companies = result.get("companies", [])
+    return {
+        "summary": f"Industry: {industry} - {len(companies)} companies",
+        "count": len(companies)
+    }
+
+@mcp.resource("yc://tag/{tag}")
+def tag_resource(tag: str) -> dict:
+    """
+    Resource representation for a YC tag.
+    
+    Args:
+        tag: The tag identifier
+        
+    Returns:
+        Resource representation with tag summary
+    """
+    result = list_companies_by_tag(tag)
+    if "error" in result:
+        return result
+    
+    companies = result.get("companies", [])
+    return {
+        "summary": f"Tag: {tag} - {len(companies)} companies",
+        "count": len(companies)
+    }
+
+@mcp.resource("yc://batch/{batch}")
+def batch_resource(batch: str) -> dict:
+    """
+    Resource representation for a YC batch.
+    
+    Args:
+        batch: The batch identifier (e.g., "W21")
+        
+    Returns:
+        Resource representation with batch summary
+    """
+    result = list_companies_by_batch(batch)
+    if "error" in result:
+        return result
+    
+    companies = result.get("companies", [])
+    return {
+        "summary": f"Batch: {batch} - {len(companies)} companies",
+        "count": len(companies)
+    }
 
 if __name__ == "__main__":
     try:
